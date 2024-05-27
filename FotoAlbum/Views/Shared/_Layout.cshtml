@@ -4,43 +4,80 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - FotoAlbum</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/FotoAlbum.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">FotoAlbum</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content glass-dark border-0">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 text-warning" id="exampleModalLabel">SEEDING DATABASE</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body">
+                    <p>By seeding the database you will lose all your data except for already created accounts.</p>
+					<p>Database will be repopulated with fake data and there will be added 3 default accounts:</p>
+					<ul>
+						<li>user@example.com (role: user)</li>
+						<li>admin@example.com (role: admin)</li>
+						<li>superadmin@example.com (role: superadmin)</li>
+					</ul>
+                    <p>With "<strong>Password123!</strong>" as password.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <form asp-action="SeedDatabase" asp-controller="Photo" method="post">
+                        <button type="submit" class="btn btn-outline-warning"><i class="fa-solid fa-database"></i> Seed Database</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="glass-dark">
+        <nav class="fs-4 d-flex flex-column justify-content-between h-100">
+            <div class="d-flex flex-column">
+                <a href="/" class="position-relative d-flex align-items-center">
+                    <i class="fa-solid fa-house"></i>
+				    <span class="text ms-1">Home</span>
+                    <span class="cursor @(ViewContext.HttpContext.Request.Path == "/" ? "" : "d-none")"></span>
+                </a>
+
+                <a href="/" class="position-relative d-flex align-items-center">
+                    <i class="fa-solid fa-images"></i>
+                    <span class="text ms-1">Photos</span>
+                    <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photos" ? "" : "d-none")"></span>
+                </a>
+
+                <a href="/" class="position-relative d-flex align-items-center">
+                    <i class="fa-solid fa-list"></i>
+                    <span class="text ms-1">Categories</span>
+                    <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photos" ? "" : "d-none")"></span>
+                </a>
+
+                <a type="button" class="position-relative d-flex align-items-center text-warning" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                    <i class="fa-solid fa-bug"></i>
+                    <span class="text ms-1">SeedDB</span>
+                </a>
+
+                
+            </div>
+
+            <div class="d-flex flex-column">
+                <!-- code omitted -->
+                <partial name="_LoginPartial" />
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - FotoAlbum - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <main role="main">
+        @RenderBody()
+    </main>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
