@@ -1,4 +1,9 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -47,16 +52,19 @@
                     <span class="cursor @(ViewContext.HttpContext.Request.Path == "/" ? "" : "d-none")"></span>
                 </a>
 
-                <a href="/" class="position-relative d-flex align-items-center">
-                    <i class="fa-solid fa-images"></i>
-                    <span class="text ms-1">Photos</span>
-                    <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photos" ? "" : "d-none")"></span>
-                </a>
+                @if (SignInManager.IsSignedIn(User) && !User.IsInRole("USER"))
+                {
+                    <a href="@Url.Action("Index", "Photo")" class="position-relative d-flex align-items-center">
+                        <i class="fa-solid fa-images"></i>
+                        <span class="text ms-1">Photos</span>
+                        <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photo" ? "" : "d-none")"></span>
+                    </a>
+                }
 
-                <a href="/" class="position-relative d-flex align-items-center">
+                <a href="/Category" class="position-relative d-flex align-items-center">
                     <i class="fa-solid fa-list"></i>
                     <span class="text ms-1">Categories</span>
-                    <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photos" ? "" : "d-none")"></span>
+                    <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Category" ? "" : "d-none")"></span>
                 </a>
 
                 <a type="button" class="position-relative d-flex align-items-center text-warning" data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -78,7 +86,6 @@
         @RenderBody()
     </main>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
