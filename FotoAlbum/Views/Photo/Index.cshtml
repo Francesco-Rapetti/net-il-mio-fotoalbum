@@ -22,13 +22,13 @@
                 @Html.DisplayNameFor(model => model.Img)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.ImgSrc)
-            </th>
-            <th>
                 @Html.DisplayNameFor(model => model.IsVisible)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.UserId)
+                @Html.DisplayNameFor(model => model.Categories)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.User)
             </th>
             <th></th>
         </tr>
@@ -43,16 +43,16 @@
                 @Html.DisplayFor(modelItem => item.Description)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Img)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ImgSrc)
+                <img src="@item.ImgSrc" class="img-thumbnail" alt="Alternate Text" />
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.IsVisible)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.UserId)
+                @string.Join(", ", item.Categories.Select(c => c.Name))
+            </td>
+            <td>
+                @item.User?.UserName;
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
