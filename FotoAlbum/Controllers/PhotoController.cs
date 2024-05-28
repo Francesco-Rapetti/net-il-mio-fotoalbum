@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using FotoAlbum;
 using FotoAlbum.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace FotoAlbum.Controllers
 {
@@ -15,11 +17,13 @@ namespace FotoAlbum.Controllers
     {
         private readonly PhotoContext _context;
         private readonly IServiceProvider _serviceProvider;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public PhotoController(PhotoContext context, IServiceProvider serviceProvider)
+        public PhotoController(PhotoContext context, IServiceProvider serviceProvider, UserManager<IdentityUser> userManager)
         {
             _context = context;
             _serviceProvider = serviceProvider;
+            _userManager = userManager;
         }
 
 
@@ -30,7 +34,7 @@ namespace FotoAlbum.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public static async Task Seed(IServiceProvider serviceProvider)
+        public async Task Seed(IServiceProvider serviceProvider)
         {
             using (var scope = serviceProvider.CreateScope())
             {
@@ -100,16 +104,58 @@ namespace FotoAlbum.Controllers
                         await userManager.AddToRoleAsync(superAdmin, "SUPERADMIN");
                     }
                 }
+
+                // Seed Categories
+                _context.Categories.RemoveRange(_context.Categories);
+                var categories = new[] { "Nature", "City", "People", "Sport", "Animals", "Food", "Flowers" };
+                foreach (var category in categories)
+                    _context.Categories.Add(new Category { Name = category });
+                _context.SaveChanges();
+
+                // Seed Photos
+                _context.Photos.RemoveRange(_context.Photos);
+                var users = await userManager.Users.ToListAsync();
+                
+                for (int i = 0; i < 100; i++)
+                {
+                    int randomUser = new Random().Next(0, users.Count - 1);
+                    var photo = new Photo
+                    {
+                        Name = $"Photo {i}",
+                        Description = $"Description {i}",
+                        IsVisible = true,
+                        UserId = users[randomUser].Id,
+                    };
+                    photo.Categories = new List<Category>();
+                    for (int j = 0; j < new Random().Next(1, 5); j++)
+                    {
+                        photo.Categories.Add(_context.Categories.ToList()[new Random().Next(0, 7)]);
+                    }
+                    _context.Photos.Add(photo);
+                }
+                _context.SaveChanges();
             }
         }
 
         // GET: Photo
-        public async Task<IActionResult> Index()
+        [Authorize(Roles = "USER, ADMIN, SUPERADMIN")]
+        public IActionResult Index(string userId)
         {
-            return View(await _context.Photos.ToListAsync());
+            if (userId == null)
+            {
+                userId = _userManager.GetUserId(User);
+            }
+            if (userId == null)
+            {
+                return NotFound();
+            }
+
+            List<Photo> photos = _context.Photos.Include(x => x.Categories).Include(x => x.User).Where(x => x.UserId == userId).ToList();
+            return View(photos);
         }
 
         // GET: Photo/Details/5
+        [Authorize(Roles = "USER, ADMIN, SUPERADMIN")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -128,9 +174,14 @@ namespace FotoAlbum.Controllers
         }
 
         // GET: Photo/Create
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
         public IActionResult Create()
         {
-            return View();
+            PhotoFormModel model = new();
+            model.Photo = new();
+            model.Categories = [.. _context.Categories.ToList()];
+            model.SelectedCategoriesIds = new List<int>();
+            return View(model);
         }
 
         // POST: Photo/Create
@@ -138,18 +189,28 @@ namespace FotoAlbum.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Img,ImgSrc,IsVisible,UserId")] Photo photo)
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
+        public IActionResult Create(PhotoFormModel data)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(photo);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                data.Categories = _context.Categories.ToList();
+                return View(data);
             }
-            return View(photo);
+
+            data.SetImageFileFromFormFile();
+            Photo newPhoto = new(data.Photo.Name, data.Photo.Description, data.Photo.Img, data.Photo.UserId, data.Photo.IsVisible);
+            foreach (int categoryId in data.SelectedCategoriesIds ?? new List<int>())
+            {
+                newPhoto.Categories?.Add(_context.Categories.Find(categoryId));
+            }
+            _context.Photos.Add(newPhoto);
+            _context.SaveChanges();
+            return RedirectToAction("Index");
         }
 
         // GET: Photo/Edit/5
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -162,6 +223,12 @@ namespace FotoAlbum.Controllers
             {
                 return NotFound();
             }
+
+            if (photo.UserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+
             return View(photo);
         }
 
@@ -170,11 +237,17 @@ namespace FotoAlbum.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Img,ImgSrc,IsVisible,UserId")] Photo photo)
         {
             if (id != photo.Id)
             {
                 return NotFound();
+            }
+
+            if (photo.UserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
             }
 
             if (ModelState.IsValid)
@@ -201,12 +274,14 @@ namespace FotoAlbum.Controllers
         }
 
         // GET: Photo/Delete/5
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
+
 
             var photo = await _context.Photos
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -215,18 +290,29 @@ namespace FotoAlbum.Controllers
                 return NotFound();
             }
 
+            if (photo.UserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+
             return View(photo);
         }
 
         // POST: Photo/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var photo = await _context.Photos.FindAsync(id);
             if (photo != null)
             {
                 _context.Photos.Remove(photo);
+            }
+
+            if (photo?.UserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
             }
 
             await _context.SaveChangesAsync();
