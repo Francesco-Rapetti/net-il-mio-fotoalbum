@@ -1,54 +1,113 @@
-﻿@model FotoAlbum.Models.Photo
+﻿﻿@using Microsoft.AspNetCore.Mvc.ModelBinding
+@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model PhotoFormModel
 
 @{
-    ViewData["Title"] = "Edit";
+	ViewData["Title"] = "Edit";
 }
 
 <h1>Edit</h1>
 
 <h4>Photo</h4>
 <hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Img" class="control-label"></label>
-                <input asp-for="Img" class="form-control" />
-                <span asp-validation-for="Img" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsVisible" /> @Html.DisplayNameFor(model => model.IsVisible)
-                </label>
-            </div>
-            <div class="form-group">
-                <label asp-for="UserId" class="control-label"></label>
-                <select asp-for="UserId" class="form-control" asp-items="ViewBag.UserId"></select>
-                <span asp-validation-for="UserId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+<div class="container">
+	<div class="glass p-3 mb-3">
+		@if (ViewData.ModelState.ErrorCount > 0)
+		{
+			<div class="alert alert-danger m-0 my-3">
+				<ul class="m-0">
+					@foreach (var error in ViewData.ModelState.Values.SelectMany(x => x.Errors))
+					{
+						if (error.ErrorMessage != "Chose an image file")
+						{
+							<li>@error.ErrorMessage</li>
+						}
+					}
+				</ul>
+			</div>
+		}
+		<form asp-action="Edit" enctype="multipart/form-data">
+			@Html.AntiForgeryToken()
+			<div asp-validation-summary="ModelOnly" class="text-danger">
+			</div>
+			<div class="row">
+				<div class="col-12 col-md-4">
+					<img id="output" src="@Model.Photo.ImgSrc" class="img-fluid" alt="Alternate Text" />
+				</div>
+
+				<div class="form-group col-12 col-md-8 align-self-end mt-3">
+
+					<div class="form-group my-3">
+						<input asp-for="Photo.IsVisible" type="checkbox" class="form-check-input" />
+						<label asp-for="Photo.IsVisible" class="control-label">Visible</label>
+						<span asp-validation-for="Photo.IsVisible" class="text-danger"></span>
+					</div>
+					<input asp-for="ImageFormFile" type="file" value="@Model.ImageFormFile" accept="image/*" onchange="loadFile(event)" class="form-control" />
+				</div>
+			</div>
+
+			<div class="form-floating my-3">
+				<input asp-for="Photo.Name" placeholder="Name" class="form-control @(ViewData.ModelState.IsValid ? "" : (ViewData.ModelState["Photo.Name"]?.ValidationState == ModelValidationState.Valid ? "is-valid" : "is-invalid"))" />
+				<label asp-for="Photo.Name" class="control-label"></label>
+				<span asp-validation-for="Photo.Name" class="text-danger"></span>
+			</div>
+
+			<div class="form-floating my-3">
+				<textarea asp-for="Photo.Description" style="height: 150px" placeholder="Description" class="form-control @(ViewData.ModelState.IsValid ? "" : (ViewData.ModelState["Photo.Description"]?.ValidationState == ModelValidationState.Valid ? "is-valid" : "is-invalid"))"></textarea>
+				<label asp-for="Photo.Description" class="control-label"></label>
+				<span asp-validation-for="Photo.Description" class="text-danger"></span>
+			</div>
+
+			<div class="d-none">
+				<input asp-for="Photo.UserId" value="@UserManager.GetUserId(User)" class="form-control" />
+			</div>
+
+
+			<div class="form-group my-3 container">
+				<p>Select Categories:</p>
+				<div class="row">
+					@for (int i = 0; i < Model.Categories?.Count; i++)
+					{
+						<div class="col-4">
+							<input id="@("SelectedCategoriesIds"+i)" type="checkbox" name="SelectedCategoriesIds" class="form-check-input @(ViewData.ModelState.IsValid ? "" : (ViewData.ModelState["SelectedCategoriesIds"]?.ValidationState == ModelValidationState.Valid ? "is-valid" : "is-invalid"))" value="@Model.Categories[i].Id"
+							@((Model.SelectedCategoriesIds?.Contains(Model.Categories[i].Id) ?? false) ? "checked" : "") />
+							<label class="form-check-label" for="@("SelectedCategoriesIds"+i)">@Model.Categories[i].Name</label>
+						</div>
+					}
+				</div>
+				<span asp-validation-for="SelectedCategoriesIds" class="text-danger"></span>
+			</div>
+
+
+			<div class="d-flex gap-3 align-content-center mt-3">
+				<div>
+					<a asp-action="Index" class="btn btn-outline-dark">Back to List</a>
+				</div>
+				<div class="form-group">
+					<input type="submit" value="Edit" class="btn btn-dark text-success" />
+				</div>
+			</div>
+		</form>
+	</div>
+
+
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+<script>
+	var loadFile = function (event) {
+		var output = document.getElementById('output');
+		output.src = URL.createObjectURL(event.target.files[0]);
+		output.onload = function () {
+			URL.revokeObjectURL(output.src) // free memory
+		}
+	};
+</script>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
 }
