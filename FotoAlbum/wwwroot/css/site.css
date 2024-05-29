@@ -66,11 +66,12 @@ header {
 
 main {
     margin-left: auto;
-    padding: 8px;
-    max-width: calc(100% - 90px);
-    height: 100%;
-    overflow: auto;
-    overflow-x: hidden;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    max-width: calc(100% - 83px);
+/*    height: 100%;*/
+/*    overflow: auto;*/
+/*    overflow-x: hidden;*/
 }
 
 nav a, nav button {
@@ -107,3 +108,29 @@ nav a:hover, nav button:hover {
     text-decoration: none;
     color: white;
 }
+
+.post-container {
+    max-width: 900px!important;
+}
+
+.post-profile-img-container {
+    width: 3rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid white;
+}
+
+.post-options {
+    text-decoration: none;
+    color: black;
+}
+
+.post-profile-name {
+    text-decoration: none;
+    color: dodgerblue;
+    font-weight: 600;
+}
+
+    .post-profile-name:hover {
+        text-decoration: underline;
+    }
