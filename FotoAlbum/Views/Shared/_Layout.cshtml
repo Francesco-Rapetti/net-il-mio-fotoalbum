@@ -61,6 +61,15 @@
                     </a>
                 }
 
+                @if (SignInManager.IsSignedIn(User) && !User.IsInRole("USER"))
+                {
+                    <a href="@Url.Action("Index", "Message")" class="position-relative d-flex align-items-center">
+                        <i class="fa-solid fa-message"></i>
+                        <span class="text ms-1">Messages</span>
+                        <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Message" ? "" : "d-none")"></span>
+                    </a>
+                }
+
                 <a href="/Category" class="position-relative d-flex align-items-center">
                     <i class="fa-solid fa-list"></i>
                     <span class="text ms-1">Categories</span>
