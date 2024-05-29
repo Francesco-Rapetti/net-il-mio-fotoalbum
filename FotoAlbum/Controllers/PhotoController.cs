@@ -10,6 +10,7 @@ using FotoAlbum.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace FotoAlbum.Controllers
 {
@@ -149,8 +150,9 @@ namespace FotoAlbum.Controllers
             {
                 return NotFound();
             }
-
-            List<Photo> photos = _context.Photos.Include(x => x.Categories).Include(x => x.User).Where(x => x.UserId == userId).ToList();
+            List<Photo> photos = new List<Photo>();
+            if (userId == _userManager.GetUserId(User)) photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId).ToList());
+            else photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId && x.IsVisible).ToList());
             return View(photos);
         }
 
@@ -211,14 +213,14 @@ namespace FotoAlbum.Controllers
 
         // GET: Photo/Edit/5
         [Authorize(Roles = "ADMIN, SUPERADMIN")]
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var photo = await _context.Photos.FindAsync(id);
+            var photo = _context.Photos.Include(x => x.Categories).FirstOrDefault(x => x.Id == id);
             if (photo == null)
             {
                 return NotFound();
@@ -228,50 +230,55 @@ namespace FotoAlbum.Controllers
             {
                 return Forbid();
             }
-
-            return View(photo);
+			PhotoFormModel model = new();
+			model.Photo = photo;
+			model.Categories = [.. _context.Categories.ToList()];
+			model.SelectedCategoriesIds = photo.Categories?.Select(x => x.Id).ToList();
+			return View(model);
         }
 
         // POST: Photo/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [Authorize(Roles = "ADMIN, SUPERADMIN")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "ADMIN, SUPERADMIN")]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Img,ImgSrc,IsVisible,UserId")] Photo photo)
+        public IActionResult Edit(int id, PhotoFormModel data)
         {
-            if (id != photo.Id)
-            {
-                return NotFound();
-            }
-
-            if (photo.UserId != _userManager.GetUserId(User))
+            if (data.Photo.UserId != _userManager.GetUserId(User))
             {
                 return Forbid();
             }
 
-            if (ModelState.IsValid)
+
+			if (ModelState.Where(x => x.Key != "ImageFormFile").Any(x => x.Value.ValidationState == ModelValidationState.Invalid))
+			{
+				PhotoFormModel model = new();
+				var photo = _context.Photos.Include(x => x.Categories).FirstOrDefault(x => x.Id == id);
+				model.Photo = photo ?? data.Photo;
+				model.Categories = [.. _context.Categories.ToList()];
+				model.SelectedCategoriesIds = photo?.Categories?.Select(x => x.Id).ToList();
+				return View(model);
+			}
+
+            Photo PhotoToEdit = _context.Photos.Include(x => x.Categories).FirstOrDefault(x => x.Id == id);
+            if (ModelState["ImageFormFile"]?.ValidationState == ModelValidationState.Valid)
             {
-                try
-                {
-                    _context.Update(photo);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PhotoExists(photo.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+			    data.SetImageFileFromFormFile();
+			    PhotoToEdit.Img = data.Photo.Img;
             }
-            return View(photo);
-        }
+
+            PhotoToEdit.Categories.Clear();
+			PhotoToEdit.Name = data.Photo.Name;
+			PhotoToEdit.Description = data.Photo.Description;
+			PhotoToEdit.IsVisible = data.Photo.IsVisible;
+			foreach (int categoryId in data.SelectedCategoriesIds ?? new List<int>())
+			{
+				PhotoToEdit.Categories?.Add(_context.Categories.Find(categoryId));
+			}
+			_context.SaveChanges();
+			return RedirectToAction("Index");
+		}
 
         // GET: Photo/Delete/5
         [Authorize(Roles = "ADMIN, SUPERADMIN")]
