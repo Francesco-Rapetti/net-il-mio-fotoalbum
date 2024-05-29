@@ -1,3 +1,191 @@
-﻿@{
+﻿
+@{
     ViewData["Title"] = "Home Page";
 }
+
+<!-- Modal -->
+<div class="modal fade" id="send-message-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content glass-dark text-dark border-0 p-3">
+            <form id="send-message-form" method="post">
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="send-message-email" placeholder="Email" required>
+                    <label for="send-message-email">Email</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <textarea class="form-control" placeholder="Leave a comment here" id="send-message-text" style="height: 200px" required></textarea>
+                    <label for="send-message-text">Comment</label>
+                </div>
+
+                <div class="form-floating mb-3 d-none">
+                    <input type="text" class="form-control" id="send-message-userId" placeholder="UserId">
+                </div>
+
+                <div class="modal-footer">
+                    <p id="send-message-to" class="text-light me-auto"></p>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-outline-light">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid post-container">
+    <div class="loading w-100 d-flex justify-content-center align-items-center">
+        <div id="loader"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+    loadPosts();
+
+    function loadPosts(photoName) {
+        let photos = [];
+        axios.get('api/PhotoApi/Get', {
+			params: {
+				photoName: photoName
+			}
+        }).then((res) => {
+			// console.log(res.data);
+            photos = res.data;
+            const postContainer = document.querySelector('.post-container');
+            postContainer.innerHTML = '';
+            let i = 0;
+            photos.forEach((photo) => {
+                // console.log(photo);
+			    if (photo.isVisible) {
+                    postContainer.innerHTML += `
+                            <!-- Modal -->
+                                <div class="modal fade" id="data-${i}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content glass-dark text-dark border-0 p-3">
+                                        <form id="form-${photo.id}" method="post">
+                                            <div class="form-floating mb-3">
+                                                <input type="email" class="form-control" id="email-${photo.id}" placeholder="Email" required>
+                                                <label for="email-${photo.id}">Email</label>
+                                            </div>
+                                            <div class="form-floating mb-3">
+                                                <textarea class="form-control" placeholder="Leave a comment here" id="text-${photo.id}" style="height: 200px" required></textarea>
+                                                <label for="text-${photo.id}">Comment</label>
+                                            </div>
+
+                                            <div class="form-floating mb-3 d-none">
+                                                <input type="text" class="form-control" id="userId-${photo.id}" value="${photo.user.id}" placeholder="UserId">
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <p class="text-light me-auto">Send to: ${photo.user.email}</p>
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button class="btn btn-outline-light" onclick="sendMessage(${photo.id})">Send</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="post-${photo.id}" class="post glass-light rounded-3 p-3 mb-4">
+                                <div class="post-header d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="post-profile-img-container">
+                                            <img src="https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_960_720.png" class="img-fluid w-100" alt="Alternate Text" />
+                                        </div>
+
+                                        <a href="/Photo?UserId=${photo.user.id}" class="post-profile-name">
+                                            ${photo.user.userName}
+                                        </a>
+                                    </div>
+
+                                    <div class="dropdown me-3">
+                                        <a class="post-options" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </a>
+
+                                        <ul class="dropdown-menu">
+                                            <li><button class="dropdown-item" onclick="hidePost(${photo.id})">Hide Post</button></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="post-body m-3">
+                                    <h5 class="img-title">${photo.name}</h5>
+                                    <p class="img-description">
+                                        ${photo.description}
+                                    </p>
+                                </div>
+
+                                <div class="post-img text-center">
+                                    <img class="img-fluid w-100" src="${photo.imgSrc}" />
+                                </div>
+
+                                <div class="post-footer text-center mt-3">
+                                    <a class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#send-message-modal" onclick="seedModal('${photo.user.id}', '${photo.user.userName}')">Send a message</a>
+                                </div>
+                            </div>
+                    `
+                    i++;
+                }
+		    })
+        })
+
+    }
+
+    function seedModal(userId, userName) {
+		document.getElementById('send-message-userId').value = userId;
+		document.getElementById('send-message-email').value = '';
+		document.getElementById('send-message-text').value = '';
+		document.getElementById('send-message-to').innerHTML = 'Send to: ' + userName;
+    }
+
+    async function hidePost(photoId) {
+        try {
+            const res = await axios.put(`api/PhotoApi/HidePhoto/${photoId}`);
+			console.log(res.data);
+            if (res.data) {
+				document.getElementById(`post-${photoId}`).classList.add('d-none');
+			} else {
+                alert("You don't have the permission to hide this post");
+            }
+        } catch (error) {
+			console.log(error);
+            alert("You don't have the permission to hide this post");
+        }
+    }
+
+
+    // send messages 
+
+    document.getElementById('send-message-form').addEventListener('submit', (e) => {
+		e.preventDefault();
+        $('#send-message-modal').modal('hide');
+		sendMessage();
+
+	});
+
+	async function sendMessage() {
+        const email = document.getElementById(`send-message-email`).value;
+		const text = document.getElementById(`send-message-text`).value;
+		const userId = document.getElementById(`send-message-userId`).value;
+        console.log(email, text, userId);
+
+		try {
+			const res = await axios.post('api/MessageApi/InsertMessage', {
+				"Email": email,
+				"Text": text,
+				"UserId": userId
+			});
+			console.log(res.data);
+            if (res.data) {
+                alert("Message sent successfully!")
+            }
+		} catch (error) {
+			console.log(error);
+		}
+	}
+    
+
+    
+</script>
