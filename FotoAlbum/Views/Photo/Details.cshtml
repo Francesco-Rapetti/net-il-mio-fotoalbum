@@ -1,0 +1,113 @@
+﻿@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model FotoAlbum.Models.Photo
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<!-- Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content glass-dark">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">WARNING</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete @Model.Name?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <a asp-action="Delete" asp-route-id="@Model?.Id" class="btn btn-outline-danger">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="px-2 content">
+    <div class="glass-dark d-flex align-items-center justify-content-between options-menu w-100 mb-2">
+        <div class="d-flex align-items-center h-100">
+            <a href="@Url.Action("Index", "Photo", new { UserId = Model.UserId })"><i class="fas fa-angle-left nav-button h-100 me-2"></i></a>
+            @Model.Name
+        </div>
+
+        <div>
+
+            @if (UserManager.GetUserId(User) == Model.UserId)
+            {
+			    <a href="@Url.Action("Edit", "Photo", new { Id = Model.Id, UserId = Model.UserId })"><i class="fas fa-pencil-alt nav-button"></i></a>
+                <a type="button" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="fas fa-trash-alt text-danger nav-button"></i></a>
+            }
+        </div>
+    </div>
+
+    <div class="index-img-container overflow-hidden pb-3 position-relative">
+        <a href="@Url.Action("PreviousPhoto", "Photo", new { Id = Model.Id, UserId = Model.UserId })" class="img-button position-absolute start-0 top-50 translate-middle-y fs-3 ms-3 glass-light rounded-circle text-dark"><i class="fa fa-angle-left"></i></a>
+
+        <div class="img-showcase h-100 glass-dark d-flex justify-content-center align-items-center p-0">
+            <img src="@Model.ImgSrc" alt="Alternate Text" />
+        </div>
+
+        <a href="@Url.Action("NextPhoto", "Photo", new { Id = Model.Id, UserId = Model.UserId })" class="img-button position-absolute end-0 top-50 translate-middle-y fs-3 me-3 glass-light rounded-circle text-dark"><i class="fa fa-angle-right"></i></a>
+    
+        <div class="info-canvas position-absolute w-100 glass-light p-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
+			    <h3 class="m-0">@Model.Name</h3>
+                <i class="fas fa-eye@(Model.IsVisible ? "" : "-slash")"></i>
+            </div>
+
+            <div class="mb-2">
+                @foreach (var Category in Model.Categories)
+                {
+                    <span class="badge rounded-pill bg-secondary">@Category.Name</span>
+                }
+            </div>
+
+			<p>@Model.Description</p>
+        </div>
+    </div>
+</div>
+
+@* <div>
+    <h4>Photo</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Description)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Description)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Img)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Img)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.IsVisible)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.IsVisible)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.User)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.User.Id)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div> *@
