@@ -57,7 +57,7 @@
                     <a href="@Url.Action("Index", "Photo")" class="position-relative d-flex align-items-center">
                         <i class="fa-solid fa-images"></i>
                         <span class="text ms-1">Photos</span>
-                        <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photo" ? "" : "d-none")"></span>
+                        <span class="cursor @(ViewContext.HttpContext.Request.Path == "/Photo" && (ViewContext.HttpContext.Request.Query["UserId"] == UserManager.GetUserId(User) || ViewContext.HttpContext.Request.Query.Count <= 0) ? "" : "d-none")"></span>
                     </a>
                 }
 
