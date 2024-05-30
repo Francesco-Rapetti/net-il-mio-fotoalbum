@@ -158,21 +158,55 @@ namespace FotoAlbum.Controllers
 
         // GET: Photo/Details/5
         [Authorize(Roles = "USER, ADMIN, SUPERADMIN")]
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var photo = await _context.Photos
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var photos = _context.Photos.Include(x => x.Categories);
+            Photo? photo = photos.Where(photo => photo.Id == id).FirstOrDefault();
             if (photo == null)
             {
                 return NotFound();
             }
 
             return View(photo);
+        }
+
+        public IActionResult PreviousPhoto(int id, string userId)
+        {
+            List<Photo> photos = new List<Photo>();
+            if (userId == _userManager.GetUserId(User)) photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId).ToList());
+            else photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId && x.IsVisible).ToList());
+            int index = photos.FindIndex(x => x.Id == id) - 1;
+            try
+            {
+                Photo photo = photos[index];
+                return RedirectToAction("Details", new { id = photo.Id });
+            }
+            catch (Exception)
+            {
+                return RedirectToAction("Index");
+            }
+        }
+
+        public IActionResult NextPhoto(int id, string userId)
+        {
+            List<Photo> photos = new List<Photo>();
+            if (userId == _userManager.GetUserId(User)) photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId).ToList());
+            else photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId && x.IsVisible).ToList());
+            int index = photos.FindIndex(x => x.Id == id) + 1;
+            try
+            {
+                Photo photo = photos[index];
+                return RedirectToAction("Details", new {id = photo.Id});
+            }
+            catch (Exception)
+            {
+                return RedirectToAction("Index");
+            }
         }
 
         // GET: Photo/Create
@@ -277,12 +311,12 @@ namespace FotoAlbum.Controllers
 				PhotoToEdit.Categories?.Add(_context.Categories.Find(categoryId));
 			}
 			_context.SaveChanges();
-			return RedirectToAction("Index");
+			return RedirectToAction("Details", new { Id = id });
 		}
 
         // GET: Photo/Delete/5
         [Authorize(Roles = "ADMIN, SUPERADMIN")]
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
             if (id == null)
             {
@@ -290,8 +324,8 @@ namespace FotoAlbum.Controllers
             }
 
 
-            var photo = await _context.Photos
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var photo = _context.Photos
+                .FirstOrDefault(m => m.Id == id);
             if (photo == null)
             {
                 return NotFound();
@@ -301,29 +335,10 @@ namespace FotoAlbum.Controllers
             {
                 return Forbid();
             }
+            _context.Remove(photo);
+            _context.SaveChanges();
 
-            return View(photo);
-        }
-
-        // POST: Photo/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "ADMIN, SUPERADMIN")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var photo = await _context.Photos.FindAsync(id);
-            if (photo != null)
-            {
-                _context.Photos.Remove(photo);
-            }
-
-            if (photo?.UserId != _userManager.GetUserId(User))
-            {
-                return Forbid();
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Index");
         }
 
         private bool PhotoExists(int id)
