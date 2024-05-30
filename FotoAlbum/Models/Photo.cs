@@ -13,7 +13,7 @@ namespace FotoAlbum.Models
         [Required]
         public string? Description { get; set; }
         public byte[]? Img { get; set; }
-        public string ImgSrc => Img != null ? $"data:image/png;base64,{Convert.ToBase64String(Img)}" : $"https://picsum.photos/id/{(this.Id < 1000 ? Id : Id - 1000)}/600/400";
+        public string ImgSrc => Img != null ? $"data:image/png;base64,{Convert.ToBase64String(Img)}" : $"https://picsum.photos/id/{getImgSeed()}/600/400";
         [Required]
         public bool IsVisible { get; set; }
         public List<Category>? Categories { get; set; }
@@ -34,6 +34,17 @@ namespace FotoAlbum.Models
             this.UserId = userId;
             this.IsVisible = isVisible;
             Categories = new List<Category>();
+        }
+
+        private int getImgSeed()
+        {
+            int seed = this.Id;
+            while (seed > 1000)
+            {
+                seed -= 1000;
+            }
+
+            return seed;
         }
     }
 }
