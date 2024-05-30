@@ -152,6 +152,11 @@ namespace FotoAlbum.Controllers
             {
                 return NotFound();
             }
+            //if (User.IsInRole("USER") && (userId == _userManager.GetUserId(User) || userId == null))
+            //{
+            //    return RedirectToAction("Index", "Home");
+            //}
+
             List<Photo> photos = new List<Photo>();
             if (userId == _userManager.GetUserId(User)) photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId).ToList());
             else photos.AddRange(_context.Photos.Include(x => x.User).Include(x => x.Categories).Where(x => x.UserId == userId && x.IsVisible).ToList());
@@ -190,7 +195,7 @@ namespace FotoAlbum.Controllers
             }
             catch (Exception)
             {
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", new { userId = userId });
             }
         }
 
@@ -207,7 +212,7 @@ namespace FotoAlbum.Controllers
             }
             catch (Exception)
             {
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", new { userId = userId });
             }
         }
 
