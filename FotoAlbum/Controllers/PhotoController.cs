@@ -116,10 +116,12 @@ namespace FotoAlbum.Controllers
                 // Seed Photos
                 _context.Photos.RemoveRange(_context.Photos);
                 var users = await userManager.Users.ToListAsync();
+                var normalUser = users.Find(user => user.UserName == "user@example.com");
+                users.Remove(normalUser);
                 
                 for (int i = 0; i < 100; i++)
                 {
-                    int randomUser = new Random().Next(0, users.Count - 1);
+                    int randomUser = new Random().Next(0, users.Count);
                     var photo = new Photo
                     {
                         Name = $"Photo {i}",
