@@ -1,0 +1,5 @@
+﻿.index-img-container.glass-light {
+    border-radius: 8px;
+    height: calc(100vh - 81px);
+    overflow: auto!important;
+}
