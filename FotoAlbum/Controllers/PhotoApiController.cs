@@ -23,18 +23,17 @@ namespace FotoAlbum.Controllers
 
         // GET: api/<ValuesController>
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult Get(string? name)
         {
-            var photos = _context.Photos.Include(x => x.User).ToList();
-            return Ok(photos);
+            if (name == null)
+            {
+                var photos = _context.Photos.Include(x => x.User).ToList();
+                return Ok(photos);
+            }
+
+            return Ok(_context.Photos.Include(x => x.User).Where(x => x.Name.Contains(name)).ToList());
         }
 
-        // GET api/<ValuesController>/5
-        [HttpGet("{id}")]
-        public IActionResult Get(string title)
-        {
-            return Ok(_context.Photos.Where(x => x.Name.Contains(title)).ToList());
-        }
 
         // PUT api/<ValuesController>/5
         [HttpPut("{id}")]
