@@ -31,11 +31,31 @@
     </div>
 </div>
 
-<div class="container-fluid post-container">
-    <div class="loading w-100 d-flex justify-content-center align-items-center">
-        <div id="loader"></div>
+<div class="px-2 content">
+    <div class="glass-dark d-flex align-items-center justify-content-between options-menu w-100 mb-2">
+        <div class="d-flex align-items-center h-100">
+                <span class="fs-5 ms-3">Homepage</span>
+        </div>
+
+        <div>
+            <input type="text" id="photo-name" placeholder="Search" class="bg-transparent border-0 text-light py-3" />
+            <button class="bg-transparent border-0" onclick="loadPosts(document.getElementById('photo-name').value)"><i class="fa-solid fa-magnifying-glass nav-button"></i></a>
+        </div>
+    </div>
+
+    <div class="alert-container d-none mt-4 text-center"></div>
+
+    <div class="index-img-container align-items-center row pb-3">
+        <div class="loading w-100 d-flex justify-content-center align-items-center">
+            <div id="loader"></div>
+        </div>
+
+        <div class="container-fluid post-container"></div>
     </div>
 </div>
+
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -44,17 +64,26 @@
     loadPosts();
 
     function loadPosts(photoName) {
+        const postContainer = document.querySelector('.post-container');
+        postContainer.innerHTML = '';
+		document.querySelector('.loading').classList.remove('d-none');
         let photos = [];
         axios.get('api/PhotoApi/Get', {
 			params: {
-				photoName: photoName
+				name: photoName
 			}
         }).then((res) => {
 			// console.log(res.data);
             photos = res.data;
-            const postContainer = document.querySelector('.post-container');
-            postContainer.innerHTML = '';
+            document.querySelector('.loading').classList.add('d-none');
             let i = 0;
+            if (photos.length == 0) {
+                const alertContainer = document.querySelector('.alert-container');
+				alertContainer.classList.remove('d-none');
+				alertContainer.innerHTML = `
+                        <span class="alert alert-primary align-self-start text-center">No photos found <a type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-warning ms-2"><i class="fas fa-bug"></i> Seed db</a></span>
+                `;
+			}
             photos.forEach((photo) => {
                 // console.log(photo);
 			    if (photo.isVisible) {
