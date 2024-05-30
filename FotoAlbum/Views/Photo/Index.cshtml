@@ -1,65 +1,58 @@
-﻿@model IEnumerable<FotoAlbum.Models.Photo>
+﻿@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model List<Photo>
 
 @{
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<div class="px-2 content">
+    <div class="glass-dark d-flex align-items-center justify-content-between options-menu w-100 mb-2">
+        <div class="d-flex align-items-center h-100">
+            @try 
+            {
+                @if (UserManager.GetUserId(User) == Model[0].UserId)
+                {
+                    <span class="fs-5 ms-3">My Photos</span>
+                }
+                else
+                {
+                    <span class="fs-5 ms-3">@Model[0].User.UserName Photos</span>
+                }
+            } catch (Exception)
+            {
+                <span class="fs-5 ms-3">My Photos</span>
+            }
+        </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Img)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsVisible)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Categories)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.User)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                <img src="@item.ImgSrc" class="img-thumbnail" alt="Alternate Text" />
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsVisible)
-            </td>
-            <td>
-                @string.Join(", ", item.Categories.Select(c => c.Name))
-            </td>
-            <td>
-                @item.User?.UserName;
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+        <div>
+            @try
+            {
+                @if (UserManager.GetUserId(User) == Model[0].UserId)
+                {
+                    <a href="@Url.Action("Create", "Photo")"><i class="fas fa-plus nav-button"></i></a>
+                }
+            } catch (Exception)
+			{
+				<a href="@Url.Action("Create", "Photo")"><i class="fas fa-plus nav-button"></i></a>
+			}
+        </div>
+    </div>
+
+    <div class="index-img-container align-items-center row pb-3">
+        @if (Model.Count == 0)
+		{
+            <div class="align-self-start mt-3 text-center">
+			    <span class="alert alert-primary align-self-start text-center">No photos found <a type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-warning ms-2"><i class="fas fa-bug"></i> Seed db</a></span>
+            </div>
+		}
+        @foreach (var item in Model)
+        {
+            <a href="@Url.Action("Details", "Photo", new { id = item.Id })" class="img-container p-0">
+				<img src="@item.ImgSrc" class="img-thumbnail" alt="Alternate Text" />
+			</a>
+        }
+    </div>
+</div>
